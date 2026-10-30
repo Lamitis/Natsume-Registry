@@ -17,6 +17,7 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.base.sha }}
           path: base
+          fetch-depth: 0
 
       - name: checkout PR head
         uses: actions/checkout@v4
@@ -24,6 +25,7 @@ jobs:
           repository: ${{ github.event.pull_request.head.repo.full_name }}
           ref: ${{ github.event.pull_request.head.sha }}
           path: pr
+          fetch-depth: 0
 
       - uses: actions/setup-python@v5
         with:
