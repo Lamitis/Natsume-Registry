@@ -1,0 +1,44 @@
+name: verify-plugin
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout base
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          path: base
+
+      - name: checkout PR head
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.event.pull_request.head.sha }}
+          path: pr
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: list changed files
+        run: |
+          cd pr
+          git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }} > "$GITHUB_WORKSPACE/changed.txt"
+          cat "$GITHUB_WORKSPACE/changed.txt"
+
+      - name: validate
+        run: python base/scripts/validate_pr.py changed.txt pr
+
+      - name: merge
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh pr merge ${{ github.event.pull_request.number }} --repo ${{ github.repository }} --squash --delete-branch
