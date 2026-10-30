@@ -1,6 +1,7 @@
 {
   "schema": 1,
-  "generated_at": "2026-10-30T09:05:18Z",
+  "generated_at": "2026-10-30T09:08:57Z",
   "count": 0,
+  "disclaimer": "本表只登记插件信息，不审核、不托管插件文件，也不保证插件安全。插件由各自作者开发和发布，安装与使用风险自负。详见 https://github.com/Lamitis/Natsume-Registry/blob/main/DISCLAIMER.md",
   "plugins": []
 }
