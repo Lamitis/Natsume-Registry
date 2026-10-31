@@ -43,11 +43,9 @@ https://raw.githubusercontent.com/Lamitis/Natsume-Registry/main/registry.json
 - 描述里不能出现 keylogger / ransomware 这类词
 - 一次 PR 只允许动一个 `plugins/*.json`，改别的文件直接拒
 
-## 这个方案的风险
+## 风险声明
+- 校验只证明「这个链接现在发出的确实是这个哈希」，不证明插件本身安全。
 
-- 校验只证明「这个链接现在发出的确实是这个哈希」，不证明插件本身安全。插件在客户端里跑起来能干什么，没有人审。
-- 所以客户端不能默认自动安装或者静默升级，至少得让用户自己点一下。
-- 想更稳就把 `ALLOWED_HOSTS` 收紧，只留作者自己仓库的下载域名。
 ## 免责声明
 
 本表只登记插件信息，不审核、不托管插件文件，也不保证插件安全；校验只证明链接与哈希一致，不证明代码安全。装与不装、装哪个，判断在你自己。完整条款见 [DISCLAIMER.md](DISCLAIMER.md)。`registry.json` 里的 `disclaimer` 字段是同一句话，客户端应该把它显示在插件列表旁边。
