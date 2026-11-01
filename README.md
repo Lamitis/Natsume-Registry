@@ -20,7 +20,7 @@ https://raw.githubusercontent.com/Lamitis/Natsume-Registry/main/registry.json
 2. 本地算哈希：`sha256sum your-plugin.zip`
 3. 提 PR，校验过了会自己合并
 
-字段（一个不多一个不少）：
+字段（必填 7 个，一个不多一个不少）：
 
 ```json
 {
@@ -34,9 +34,32 @@ https://raw.githubusercontent.com/Lamitis/Natsume-Registry/main/registry.json
 }
 ```
 
+可选字段（v1.36 起客户端支持，写了就要合法；不写就是默认值）：
+
+| 字段 | 作用 | 限制 |
+| --- | --- | --- |
+| `category` | 插件市场的分类（不写/空 → 显示「未分类」；市场里的分类筛选栏由数据自动生成，不需要在客户端配置） | ≤ 24 字 |
+| `tags` | 搜索与卡片标签 | ≤ 6 个、每个 ≤ 16 字 |
+| `permissions` | 安装确认页展示的能力声明 | ≤ 12 条、每条 ≤ 32 字 |
+| `repo_url` / `changelog_url` | 详情页「看仓库 / 更新日志」 | https，域名限 github.com / gitee.com / gitlab.com |
+
+```json
+{
+  "id": "weekly-stats",
+  "name": "每周统计",
+  "author": "someone",
+  "version": "1.0.0",
+  "description": "一句话说明，240 字以内",
+  "download_url": "https://github.com/someone/x/releases/download/v1.0.0/weekly-stats.zip",
+  "sha256": "64 位小写十六进制",
+  "category": "学习辅助",
+  "tags": ["统计", "周报"]
+}
+```
+
 ## 校验什么
 
-- JSON 合法、必填字段齐全、没有多余字段
+- JSON 合法、必填字段齐全、没有多余字段（可选字段见上表，写了要合法）
 - id 只用小写字母数字和 `._-`，且和文件名一致；version 写成 `1.2.3`
 - `download_url` 必须是 https，域名在 `scripts/validate_pr.py` 的 `ALLOWED_HOSTS` 里
 - 真的把文件下载下来算 sha256，跟清单里的比对

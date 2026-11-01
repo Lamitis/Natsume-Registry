@@ -15,12 +15,23 @@ ALLOWED_HOSTS = {
     "raw.githubusercontent.com",
     "codeload.github.com",
 }
+# 展示型链接（仓库 / 更新日志）允许的域名，与客户端 RegistryPlugin.allowedLinkHosts 一致
+ALLOWED_LINK_HOSTS = {"github.com", "gitee.com", "gitlab.com"}
 ID_RE = re.compile(r"^[a-z0-9][a-z0-9._-]{2,63}$")
 VER_RE = re.compile(r"^\d+\.\d+\.\d+([-+][0-9A-Za-z.-]+)?$")
 HASH_RE = re.compile(r"^[0-9a-f]{64}$")
 BLOCK_WORDS = ("keylogger", "ransomware", "token-grabber", "stealer", "cryptominer")
 MAX_BYTES = 32 * 1024 * 1024
 REQUIRED = ("id", "name", "author", "version", "description", "download_url", "sha256")
+
+# v1.36 起客户端支持的可选字段（RegistryPlugin.optionalFieldNames）。
+# 缺省合法；一旦写了就要合法——这里比客户端严一档：客户端会静默忽略坏值，
+# 但 PR 阶段应该直接告诉作者哪里不对，否则他永远不知道为什么分类没显示。
+OPTIONAL = ("category", "tags", "permissions", "repo_url", "changelog_url")
+MAX_CATEGORY_CHARS = 24  # 客户端 RegistryPlugin.maxCategoryChars
+MAX_TAGS, MAX_TAG_CHARS = 6, 16  # 客户端 maxTags / maxTagChars
+MAX_PERMISSIONS, MAX_PERMISSION_CHARS = 12, 32  # 客户端 maxPermissions / maxPermissionChars
+
 
 
 def fail(msg):
@@ -50,6 +61,54 @@ def check_remote(url, expected):
         fail("sha256 对不上：链接里算出来是 " + digest.hexdigest() + "，清单里写的是 " + expected)
 
 
+def check_optional(data):
+    """可选字段（分类 / 标签 / 能力 / 链接）：可以不写，写了就得合法。"""
+    category = data.get("category")
+    if category is not None:
+        if not isinstance(category, str) or not category.strip():
+            fail("category 必须是非空字符串")
+        if len(category.strip()) > MAX_CATEGORY_CHARS:
+            fail("category 太长（上限 %d 字）" % MAX_CATEGORY_CHARS)
+
+    tags = data.get("tags")
+    if tags is not None:
+        if not isinstance(tags, list):
+            fail("tags 必须是字符串数组")
+        if len(tags) > MAX_TAGS:
+            fail("tags 最多 %d 个" % MAX_TAGS)
+        for tag in tags:
+            if not isinstance(tag, str) or not tag.strip():
+                fail("tags 里有空项或非字符串")
+            if len(tag.strip()) > MAX_TAG_CHARS:
+                fail("tag 太长：%s（上限 %d 字）" % (tag, MAX_TAG_CHARS))
+
+    permissions = data.get("permissions")
+    if permissions is not None:
+        if not isinstance(permissions, list):
+            fail("permissions 必须是字符串数组")
+        if len(permissions) > MAX_PERMISSIONS:
+            fail("permissions 最多 %d 条" % MAX_PERMISSIONS)
+        for perm in permissions:
+            if not isinstance(perm, str) or not perm.strip():
+                fail("permissions 里有空项或非字符串")
+            if len(perm.strip()) > MAX_PERMISSION_CHARS:
+                fail("permission 太长：%s（上限 %d 字）" % (perm, MAX_PERMISSION_CHARS))
+
+    for key in ("repo_url", "changelog_url"):
+        link = data.get(key)
+        if link is None:
+            continue
+        if not isinstance(link, str):
+            fail(key + " 必须是字符串")
+        parts = urllib.parse.urlsplit(link.strip())
+        if parts.scheme != "https":
+            fail(key + " 必须是 https 链接")
+        if parts.hostname not in ALLOWED_LINK_HOSTS:
+            fail(key + " 的域名不在白名单里：" + str(parts.hostname))
+        if not parts.path or parts.path == "/":
+            fail(key + " 缺少路径：" + link)
+
+
 def main(argv):
     if len(argv) != 3:
         fail("用法：validate_pr.py <changed-files.txt> <pr-checkout>")
@@ -73,9 +132,10 @@ def main(argv):
     missing = [k for k in REQUIRED if not data.get(k)]
     if missing:
         fail("缺少字段：" + ", ".join(missing))
-    extra = sorted(set(data) - set(REQUIRED))
+    extra = sorted(set(data) - set(REQUIRED) - set(OPTIONAL))
     if extra:
         fail("不认识的字段：" + ", ".join(extra))
+    check_optional(data)
     if not ID_RE.fullmatch(data["id"]):
         fail("id 只能用小写字母、数字、点、下划线和短横线，3-64 个字符")
     if Path(rel).stem != data["id"]:
