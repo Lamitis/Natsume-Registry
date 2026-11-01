@@ -1,0 +1,9 @@
+{
+  "id": "natsume.cheat-sheet-generator",
+  "name": "考前 5 分钟小抄生成器",
+  "author": "NatsumeQuizMaster",
+  "version": "1.1.0",
+  "description": "把最近的错题和薄弱知识点压缩成一页小抄：关键公式、避坑指南、医学口诀。只出干货，可复制或另存为 .md 打印。",
+  "download_url": "https://github.com/Lamitis/Quiz-Plugins/releases/download/cheat-sheet-v1.1.0/cheat-sheet-generator-1.1.0.natsume-plugin.zip",
+  "sha256": "8a82eb7303ca4900fa1514b3c8df65595b6b0bf28ea96f78e20a79a11eeb0d06"
+}
