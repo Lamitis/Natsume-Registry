@@ -1,0 +1,9 @@
+{
+  "id": "natsume.variant-generator",
+  "name": "举一反三 · 变体题生成器",
+  "author": "NatsumeQuizMaster",
+  "version": "1.1.0",
+  "description": "读完一道错题的解析后，用同一考点换一套陷阱，现出一道变体题：答案默认收起，先自己作答再看解析。",
+  "download_url": "https://github.com/Lamitis/Quiz-Plugins/releases/download/variant-v1.1.0/variant-generator-1.1.0.natsume-plugin.zip",
+  "sha256": "b9af5b2fe2f36df655c163bf8b8611524362ace17e301e8153f7868a186e49af"
+}
