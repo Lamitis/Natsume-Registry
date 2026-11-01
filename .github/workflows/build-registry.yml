@@ -5,6 +5,9 @@ on:
     branches: [main]
     paths:
       - "plugins/**"
+  # 手动补跑：verify-plugin 的自动合并是用 GITHUB_TOKEN 推的，按 GitHub 规则这类推送
+  # 不会再触发本工作流；有这一条就能在 Actions 页面点一下重建（或 `gh workflow run build-registry`）。
+  workflow_dispatch:
 
 permissions:
   contents: write

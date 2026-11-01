@@ -44,3 +44,52 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: gh pr merge ${{ github.event.pull_request.number }} --repo ${{ github.repository }} --squash --delete-branch
+
+      # 自愈：上面这次合并是用 GITHUB_TOKEN 推的，GitHub 规定它不会再触发其它工作流，
+      # 所以 build-registry 不会跑、客户端会一直读到旧的 registry.json。这里合并完就地
+      # 重新生成并推回 main，不依赖 PAT，也不等下一次 push。
+      # `if: always()` + 状态判断：校验失败 / 重跑时 PR 没合并，就直接跳过，不乱改 main。
+      - name: rebuild registry.json after merge
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          set -euo pipefail
+
+          STATE="$(gh pr view "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --json state --jq .state)"
+          if [ "$STATE" != "MERGED" ]; then
+            echo "PR #$PR_NUMBER 状态为 $STATE，跳过 registry.json 重建"
+            exit 0
+          fi
+
+          cd base
+          git config user.name "natsume-registry-bot"
+          git config user.email "bot@users.noreply.github.com"
+
+          # 合并刚发生，main 的 tip 会变：每次都重新取，最多重试 3 次（并发合并时互相让一步）
+          for attempt in 1 2 3; do
+            git fetch --no-tags origin main
+            git checkout -f -B main FETCH_HEAD
+
+            python scripts/build_registry.py
+
+            if git diff --quiet -- registry.json; then
+              echo "registry.json 已是最新，无需提交"
+              exit 0
+            fi
+
+            git add registry.json
+            git commit -m "chore: rebuild registry.json（PR #${PR_NUMBER} 合并后自愈）"
+
+            if git push origin main; then
+              echo "已把 registry.json 推回 main"
+              exit 0
+            fi
+
+            echo "推送失败（第 ${attempt} 次），重试…"
+            sleep 2
+          done
+
+          echo "::error::registry.json 重建后推送失败。请手动跑 build-registry：gh workflow run build-registry --repo $GITHUB_REPOSITORY"
+          exit 1
